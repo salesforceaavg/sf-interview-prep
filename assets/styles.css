@@ -21,8 +21,9 @@
   --sales:#5ec2ee; --service:#e08ad0; --exp:#7fd383; color-scheme:dark}
 
 *{box-sizing:border-box}
-html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6}
+html{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6;display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+main{flex:1 0 auto}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 [hidden]{display:none!important}
 .wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -95,8 +96,22 @@ section.topic{margin-bottom:36px}
 .topic-head h2 small{font:500 12px var(--f-mono);color:var(--muted)}
 .topic-head p{color:var(--muted);margin:2px 0 0;font-size:14px;flex-basis:100%}
 .meter{display:flex;align-items:center;gap:8px;font:500 12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
-.meter .track{width:120px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:flex}
-.meter .d{background:var(--easy)} .meter .r{background:var(--review)}
+.meter .track{position:relative;width:120px;height:6px;border-radius:999px;background:var(--line);overflow:hidden;display:flex;flex:none}
+.meter .d,.meter .r{position:relative;height:100%;transition:width .9s cubic-bezier(.22,1,.36,1)}
+.meter .d{background:var(--easy);overflow:hidden}
+.meter .r{background:var(--review);transition-delay:.12s}
+/* light sweep across the completed part */
+.meter .d::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-100%);animation:sweep 2.8s ease-in-out 1s infinite}
+@keyframes sweep{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}
+/* short pulse when progress goes up */
+.meter.bump .track{animation:bump .6s ease}
+@keyframes bump{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--easy) 55%,transparent)}100%{box-shadow:0 0 0 6px transparent}}
+.meter.bump .mtext b{animation:pop .5s ease}
+@keyframes pop{40%{color:var(--easy);transform:scale(1.15)}}
+.meter .mtext b{display:inline-block;color:var(--fg)}
+.overall{margin-top:16px;max-width:560px}
+.meter.big{font-size:12.5px;flex-wrap:wrap;gap:6px 12px}
+.meter.big .track{width:100%;max-width:560px;height:10px}
 
 .qa{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;scroll-margin-top:190px}
 .qa.st-done{border-left:3px solid var(--easy)}
@@ -141,7 +156,17 @@ dialog::backdrop{background:rgba(10,15,22,.5)}
 .oauth .btn{flex:1}
 .msg{min-height:1.2em}
 
-.foot{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);font-size:13px}
+.foot{border-top:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:13px;padding-block:28px calc(20px + env(safe-area-inset-bottom,0px))}
+.foot-grid{display:flex;justify-content:space-between;gap:20px 40px;flex-wrap:wrap}
+.foot-brand{max-width:46ch;min-width:0}
+.foot-brand p{margin:0}
+.foot-name{font-family:var(--f-display);font-weight:700;font-size:18px;color:var(--fg);margin-bottom:4px!important}
+.foot-links{display:flex;flex-direction:column;gap:6px}
+.foot-links a{color:var(--accent);text-decoration:none;font-weight:500}
+.foot-links a:hover{text-decoration:underline}
+.foot-links a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.foot-note{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.foot-note p{margin:0;max-width:90ch}
 
 @media (max-width:759px){.bar{position:static}.qa{scroll-margin-top:12px}}
 @media (max-width:600px){
@@ -149,4 +174,5 @@ dialog::backdrop{background:rgba(10,15,22,.5)}
   .qa summary{grid-template-columns:auto 1fr}
   .tags{grid-column:2;justify-content:flex-start;max-width:none}
 }
+@media (prefers-reduced-motion:reduce){.meter .d,.meter .r{transition:none}.meter .d::after,.meter.bump .track,.meter.bump .mtext b{animation:none}}
 @media (prefers-reduced-motion:no-preference){.qa[open] .ans{animation:fade .18s ease}@keyframes fade{from{opacity:.4}to{opacity:1}}}

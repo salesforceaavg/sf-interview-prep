@@ -17,11 +17,11 @@
 
   // ---------- multi-select dropdowns ----------
   const FILTERS = [
+    { key: "cloud", label: "Cloud", groups: [{ name: "Cloud", items: SF.clouds.map(c => ({ v: c.id, label: c.name, n: count(q => q.clouds.includes(c.id)) })) }] },
     { key: "topic", label: "Topic", groups: SF.groups.map(g => ({
         name: g.name,
         items: SF.topics.filter(t => t.group === g.id).map(t => ({ v: t.id, label: t.name, n: count(q => q.topic === t.id) }))
       })).filter(g => g.items.length) },
-    { key: "cloud", label: "Cloud", groups: [{ name: "Cloud", items: SF.clouds.map(c => ({ v: c.id, label: c.name, n: count(q => q.clouds.includes(c.id)) })) }] },
     { key: "level", label: "Level", groups: [{ name: "Level", items: LEVELS.map(l => ({ v: l, label: l, n: count(q => q.level === l) })) }] },
     { key: "type", label: "Type", groups: [{ name: "Question type", items: Object.entries(TYPES).map(([k, v]) => ({ v: k, label: v, n: count(q => q.type === k) })) }] },
     { key: "status", label: "Progress", groups: [{ name: "Your progress", items: Object.entries(STATUSES).map(([k, v]) => ({ v: k, label: v })) }] }
@@ -175,12 +175,37 @@
     if (old) { const t = document.createElement("div"); t.innerHTML = statusButtons(q); old.replaceWith(t.firstChild); }
   }
 
-  function meter(qs) {
+  // ---------- progress bars ----------
+  // Bars are created at 0 width and grown on the next frame, so they animate in;
+  // later changes update the widths in place so the CSS transition runs.
+  function tally(qs) {
     let done = 0, rev = 0;
     qs.forEach(q => { const s = P.status(q.id); if (s === "done") done++; else if (s === "review") rev++; });
-    const pct = n => (qs.length ? (n / qs.length) * 100 : 0).toFixed(1) + "%";
-    return '<span class="meter"><span class="track"><span class="d" style="width:' + pct(done) + '"></span><span class="r" style="width:' + pct(rev) + '"></span></span>' +
-      done + " done · " + rev + " review</span>";
+    const pct = n => (qs.length ? (n / qs.length) * 100 : 0);
+    return { done, rev, total: qs.length, pd: pct(done), pr: pct(rev) };
+  }
+  function meter(qs, big) {
+    const t = tally(qs);
+    return '<span class="meter' + (big ? " big" : "") + '" role="img" aria-label="' + meterLabel(t) + '">' +
+      '<span class="track"><span class="d" style="width:0" data-w="' + t.pd + '"></span><span class="r" style="width:0" data-w="' + t.pr + '"></span></span>' +
+      '<span class="mtext">' + meterText(t, big) + "</span></span>";
+  }
+  const meterLabel = t => t.done + " of " + t.total + " done, " + t.rev + " in review";
+  const meterText = (t, big) => big
+    ? "<b>" + Math.round(t.pd) + "%</b> done · " + t.done + "/" + t.total + " questions · " + t.rev + " in review"
+    : t.done + " done · " + t.rev + " review";
+  function growMeters(root) {
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+      root.querySelectorAll(".meter [data-w]").forEach(s => { s.style.width = s.dataset.w + "%"; })));
+  }
+  function updateMeter(el, qs) {
+    const t = tally(qs), d = el.querySelector(".d"), r = el.querySelector(".r");
+    const grew = t.pd > parseFloat(d.dataset.w || 0);
+    d.dataset.w = t.pd; r.dataset.w = t.pr;
+    d.style.width = t.pd + "%"; r.style.width = t.pr + "%";
+    el.querySelector(".mtext").innerHTML = meterText(t, el.classList.contains("big"));
+    el.setAttribute("aria-label", meterLabel(t));
+    if (grew) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
   }
 
   function render() {
@@ -201,18 +226,18 @@
     });
     if (!shown) listEl.innerHTML = '<p class="empty">No questions match these filters. Remove a filter or clear the search.</p>';
     $("result-count").textContent = filtered() ? shown + " of " + SF.q.length + " questions match" : "";
+    growMeters(listEl);
     stats();
   }
 
   function stats() {
-    const ids = SF.q.map(q => q.id);
-    const done = ids.filter(id => P.status(id) === "done").length;
-    const rev = ids.filter(id => P.status(id) === "review").length;
     const lv = l => count(q => q.level === l);
     $("stats").innerHTML =
       "<span><b>" + SF.q.length + "</b> questions</span><span><b>" + SF.topics.length + "</b> topics</span>" +
-      "<span><b>" + lv("Basic") + "</b> basic · <b>" + lv("Mid") + "</b> mid · <b>" + lv("Senior") + "</b> senior</span>" +
-      "<span><b>" + done + "</b> done · <b>" + rev + "</b> in review</span>";
+      "<span><b>" + lv("Basic") + "</b> basic · <b>" + lv("Mid") + "</b> mid · <b>" + lv("Senior") + "</b> senior</span>";
+    const box = $("overall");
+    if (!box.firstChild) { box.innerHTML = meter(SF.q, true); growMeters(box); }
+    else updateMeter(box.firstChild, SF.q);
   }
 
   // ---------- account ----------
@@ -289,8 +314,13 @@
   P.onChange(() => {
     account();
     if (state.status.size) render();
-    else { listEl.querySelectorAll("details.qa").forEach(refreshCard); listEl.querySelectorAll("section.topic").forEach(sec => {
-      const m = sec.querySelector(".meter"); if (m) m.outerHTML = meter(SF.q.filter(q => q.topic === sec.dataset.topic)); }); stats(); }
+    else {
+      listEl.querySelectorAll("details.qa").forEach(refreshCard);
+      listEl.querySelectorAll("section.topic").forEach(sec => {
+        const m = sec.querySelector(".meter"); if (m) updateMeter(m, SF.q.filter(q => q.topic === sec.dataset.topic));
+      });
+      stats();
+    }
   });
 
   render();

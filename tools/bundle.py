@@ -13,7 +13,7 @@ title = re.search(r"<title>.*?</title>", head, re.S).group(0)
 fonts = re.search(r'<link rel="stylesheet" href="https://fonts[^>]+>', head).group(0)
 css = (root / "assets/styles.css").read_text(encoding="utf-8")
 # the publishing skeleton pads :root for safe areas, so drop our own html padding rule
-css = css.replace("html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}\n", "")
+css = css.replace("html{padding-top:env(safe-area-inset-top,0px)}\n", "")
 
 def inline(m):
     src = m.group(1)
