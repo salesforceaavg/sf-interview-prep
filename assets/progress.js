@@ -15,7 +15,6 @@
  */
 window.Progress = (() => {
   const GUEST = "sfprep:guest";
-  const cfg = window.SF_CONFIG || {};
   let key = GUEST, data = {}, user = null, client = null;
   let syncState = "local";               // local | syncing | synced | error
   const pending = new Map();
@@ -85,9 +84,9 @@ window.Progress = (() => {
   }
 
   // ---------- auth ----------
-  const enabled = !!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient);
+  const enabled = !!window.SFDB;
   if (enabled) {
-    client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    client = window.SFDB;
     client.auth.getSession().then(({ data: d }) => { if (d.session) signedIn(d.session.user); });
     client.auth.onAuthStateChange((event, session) => {
       if (session && session.user) signedIn(session.user);

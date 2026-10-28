@@ -1,6 +1,8 @@
-(() => {
+(async () => {
   const SF = window.SF;
   const P = window.Progress;
+  await SF.ready;                      // admin edits from the database, if any
+  SF.q.forEach(SF.tagClouds);
   const TYPES = { concept: "Concept", scenario: "Scenario", code: "Write code", output: "Output / bug", design: "Design" };
   const LEVELS = ["Basic", "Mid", "Senior"];
   const STATUSES = { none: "Not started", review: "In review", done: "Done" };
