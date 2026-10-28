@@ -3,49 +3,127 @@
   const P = window.Progress;
   const TYPES = { concept: "Concept", scenario: "Scenario", code: "Write code", output: "Output / bug", design: "Design" };
   const LEVELS = ["Basic", "Mid", "Senior"];
-  const STATUSES = { all: "Any progress", none: "Not started", review: "In review", done: "Done" };
+  const STATUSES = { none: "Not started", review: "In review", done: "Done" };
+  const CLOUD = Object.fromEntries(SF.clouds.map(c => [c.id, c]));
 
-  const state = { topic: "all", level: "all", type: "all", status: "all", term: "" };
+  // Each filter is a Set of selected values; an empty Set means "all".
+  const state = { topic: new Set(), cloud: new Set(), level: new Set(), type: new Set(), status: new Set(), term: "" };
   const byId = new Map(SF.q.map((q, i) => { q.n = i + 1; return [q.id, q]; }));
 
   const $ = id => document.getElementById(id);
   const listEl = $("list");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const count = fn => SF.q.filter(fn).length;
 
-  // ---------- chips ----------
-  function chipRow(el, key, items) {
-    el.innerHTML = "";
-    items.forEach(([val, label, n]) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "chip"; b.dataset.v = val;
-      b.innerHTML = label + (n != null ? '<span class="n">' + n + "</span>" : "");
-      b.onclick = () => { state[key] = val; render(); };
-      el.appendChild(b);
+  // ---------- multi-select dropdowns ----------
+  const FILTERS = [
+    { key: "topic", label: "Topic", groups: SF.groups.map(g => ({
+        name: g.name,
+        items: SF.topics.filter(t => t.group === g.id).map(t => ({ v: t.id, label: t.name, n: count(q => q.topic === t.id) }))
+      })).filter(g => g.items.length) },
+    { key: "cloud", label: "Cloud", groups: [{ name: "Cloud", items: SF.clouds.map(c => ({ v: c.id, label: c.name, n: count(q => q.clouds.includes(c.id)) })) }] },
+    { key: "level", label: "Level", groups: [{ name: "Level", items: LEVELS.map(l => ({ v: l, label: l, n: count(q => q.level === l) })) }] },
+    { key: "type", label: "Type", groups: [{ name: "Question type", items: Object.entries(TYPES).map(([k, v]) => ({ v: k, label: v, n: count(q => q.type === k) })) }] },
+    { key: "status", label: "Progress", groups: [{ name: "Your progress", items: Object.entries(STATUSES).map(([k, v]) => ({ v: k, label: v })) }] }
+  ];
+  const allValues = f => f.groups.flatMap(g => g.items.map(i => i.v));
+  const labelOf = (f, v) => f.groups.flatMap(g => g.items).find(i => i.v === v).label;
+
+  const filtersEl = $("filters");
+  FILTERS.forEach(f => {
+    const wrap = document.createElement("div");
+    wrap.className = "ms"; wrap.dataset.key = f.key;
+    const pid = "ms-panel-" + f.key;
+    let html = '<button type="button" class="ms-btn" aria-haspopup="true" aria-expanded="false" aria-controls="' + pid + '">' +
+      '<span class="ms-label">' + f.label + '</span><span class="ms-val">All</span>' +
+      '<svg class="ms-caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+      '<div class="ms-panel" id="' + pid + '" role="group" aria-label="' + f.label + '" hidden>' +
+      '<div class="ms-tools"><button type="button" data-act="all">Select all</button><button type="button" data-act="none">Clear</button></div>';
+    f.groups.forEach(g => {
+      html += '<fieldset' + (f.groups.length > 1 ? "" : ' class="single"') + "><legend>" + g.name + "</legend>";
+      g.items.forEach(i => {
+        const id = "f-" + f.key + "-" + i.v;
+        html += '<label for="' + id + '"><input type="checkbox" id="' + id + '" value="' + i.v + '">' +
+          '<span class="ms-item">' + i.label + "</span>" + (i.n != null ? '<span class="n">' + i.n + "</span>" : "") + "</label>";
+      });
+      html += "</fieldset>";
+    });
+    wrap.innerHTML = html + "</div>";
+    filtersEl.appendChild(wrap);
+
+    const btn = wrap.querySelector(".ms-btn"), panel = wrap.querySelector(".ms-panel");
+    btn.addEventListener("click", () => (panel.hidden ? openPanel(wrap) : closePanels()));
+    panel.addEventListener("change", e => {
+      if (e.target.type !== "checkbox") return;
+      e.target.checked ? state[f.key].add(e.target.value) : state[f.key].delete(e.target.value);
+      normalise(f); render();
+    });
+    panel.addEventListener("click", e => {
+      const act = e.target.dataset && e.target.dataset.act;
+      if (!act) return;
+      state[f.key] = act === "all" ? new Set(allValues(f)) : new Set();
+      normalise(f); render();
+    });
+  });
+
+  // all boxes ticked is the same as none ticked: show everything
+  function normalise(f) { if (state[f.key].size === allValues(f).length) state[f.key] = new Set(); }
+
+  function openPanel(wrap) {
+    closePanels();
+    const btn = wrap.querySelector(".ms-btn"), panel = wrap.querySelector(".ms-panel");
+    panel.hidden = false; btn.setAttribute("aria-expanded", "true");
+    panel.style.left = "0px";
+    const r = panel.getBoundingClientRect(), max = document.documentElement.clientWidth - 12;
+    if (r.right > max) panel.style.left = Math.max(-r.left + 12, max - r.right) + "px";   // keep it on screen
+    const first = panel.querySelector("input"); if (first) first.focus();
+  }
+  function closePanels(returnFocus) {
+    filtersEl.querySelectorAll(".ms").forEach(w => {
+      const p = w.querySelector(".ms-panel"), b = w.querySelector(".ms-btn");
+      if (!p.hidden) { p.hidden = true; b.setAttribute("aria-expanded", "false"); if (returnFocus) b.focus(); }
     });
   }
-  const count = fn => SF.q.filter(fn).length;
-  chipRow($("chips-topic"), "topic", [["all", "All topics", SF.q.length],
-    ...SF.topics.map(t => [t.id, t.name, count(q => q.topic === t.id)])]);
-  chipRow($("chips-level"), "level", [["all", "All levels", null], ...LEVELS.map(l => [l, l, count(q => q.level === l)])]);
-  chipRow($("chips-type"), "type", [["all", "All types", null], ...Object.entries(TYPES).map(([k, v]) => [k, v, count(q => q.type === k)])]);
-  chipRow($("chips-status"), "status", Object.entries(STATUSES).map(([k, v]) => [k, v, null]));
+  document.addEventListener("click", e => { if (!e.target.closest(".ms")) closePanels(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closePanels(true); });
 
-  function syncChips() {
-    [["chips-topic", "topic"], ["chips-level", "level"], ["chips-type", "type"], ["chips-status", "status"]].forEach(([id, k]) =>
-      $(id).querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.v === state[k]))));
+  function syncFilters() {
+    FILTERS.forEach(f => {
+      const wrap = filtersEl.querySelector('.ms[data-key="' + f.key + '"]');
+      const sel = state[f.key];
+      wrap.querySelectorAll("input[type=checkbox]").forEach(c => (c.checked = sel.has(c.value)));
+      wrap.querySelector(".ms-val").textContent = sel.size === 0 ? "All" : sel.size === 1 ? labelOf(f, [...sel][0]) : sel.size + " selected";
+      wrap.classList.toggle("active", sel.size > 0);
+    });
+    // active filter pills (quick remove)
+    const pills = [];
+    FILTERS.forEach(f => state[f.key].forEach(v => pills.push(
+      '<button type="button" class="pill" data-k="' + f.key + '" data-v="' + esc(v) + '" aria-label="Remove ' + esc(f.label + ": " + labelOf(f, v)) + '">' +
+      '<span class="pill-k">' + f.label + "</span>" + esc(labelOf(f, v)) + '<span aria-hidden="true" class="x">×</span></button>')));
+    $("active").innerHTML = pills.join("") + (pills.length ? '<button type="button" class="clear-all" id="clear-all">Clear all filters</button>' : "");
+    $("active").hidden = !pills.length;
   }
+  $("active").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "clear-all") FILTERS.forEach(f => (state[f.key] = new Set()));
+    else state[b.dataset.k].delete(b.dataset.v);
+    render();
+  });
 
   // ---------- filtering ----------
   const plain = html => html.replace(/<[^>]+>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
   SF.q.forEach(q => { q._text = (q.q + " " + plain(q.a)).toLowerCase(); });
 
   function matches(q) {
-    if (state.topic !== "all" && q.topic !== state.topic) return false;
-    if (state.level !== "all" && q.level !== state.level) return false;
-    if (state.type !== "all" && q.type !== state.type) return false;
-    if (state.status !== "all" && P.status(q.id) !== state.status) return false;
+    if (state.topic.size && !state.topic.has(q.topic)) return false;
+    if (state.cloud.size && !q.clouds.some(c => state.cloud.has(c))) return false;
+    if (state.level.size && !state.level.has(q.level)) return false;
+    if (state.type.size && !state.type.has(q.type)) return false;
+    if (state.status.size && !state.status.has(P.status(q.id))) return false;
     if (state.term && !state.term.split(/\s+/).every(w => q._text.includes(w))) return false;
     return true;
   }
+  const filtered = () => FILTERS.some(f => state[f.key].size) || !!state.term;
 
   // ---------- rendering ----------
   function statusButtons(q) {
@@ -61,8 +139,9 @@
     const s = P.status(q.id);
     d.className = "qa" + (s !== "none" ? " st-" + s : "");
     d.id = q.id;
+    const clouds = q.clouds.map(c => '<span class="cld c-' + c + '">' + CLOUD[c].short + "</span>").join("");
     d.innerHTML = '<summary><span class="num">Q' + q.n + '</span><span class="qt">' + q.q + '</span>' +
-      '<span class="tags"><span class="typ">' + (TYPES[q.type] || "") + '</span><span class="lvl ' + q.level + '">' + q.level + "</span></span></summary>";
+      '<span class="tags">' + clouds + '<span class="typ">' + (TYPES[q.type] || "") + '</span><span class="lvl ' + q.level + '">' + q.level + "</span></span></summary>";
     // answers are built only when opened, keeps 500+ cards light
     d.addEventListener("toggle", () => { if (d.open && !d.querySelector(".ans")) fill(d, q); });
     return d;
@@ -105,11 +184,11 @@
   }
 
   function render() {
-    syncChips();
+    syncFilters();
     listEl.innerHTML = "";
     let shown = 0;
     SF.topics.forEach(t => {
-      if (state.topic !== "all" && state.topic !== t.id) return;
+      if (state.topic.size && !state.topic.has(t.id)) return;
       const all = SF.q.filter(q => q.topic === t.id);
       const items = all.filter(matches);
       if (!items.length) return;
@@ -120,7 +199,8 @@
       items.forEach(q => { sec.appendChild(card(q)); shown++; });
       listEl.appendChild(sec);
     });
-    if (!shown) listEl.innerHTML = '<p class="empty">No questions match these filters. Clear the search or pick another topic, level or type.</p>';
+    if (!shown) listEl.innerHTML = '<p class="empty">No questions match these filters. Remove a filter or clear the search.</p>';
+    $("result-count").textContent = filtered() ? shown + " of " + SF.q.length + " questions match" : "";
     stats();
   }
 
@@ -148,7 +228,7 @@
       if (dlg.open) dlg.close();
       const s = P.sync();
       const label = { syncing: "Syncing…", synced: "Synced", error: "Sync failed, retrying", local: "" }[s];
-      el.innerHTML = '<span class="who">' + (u.email || "Signed in") + '</span><span class="sync ' + (s === "error" ? "err" : s === "synced" ? "ok" : "") + '">' + label +
+      el.innerHTML = '<span class="who">' + esc(u.email || "Signed in") + '</span><span class="sync ' + (s === "error" ? "err" : s === "synced" ? "ok" : "") + '">' + label +
         '</span><button class="btn" type="button" id="signout">Sign out</button>';
       $("signout").onclick = () => P.signOut();
     }
@@ -198,15 +278,17 @@
   function fromHash() {
     const id = decodeURIComponent(location.hash.slice(1));
     if (!byId.has(id)) return;
-    const q = byId.get(id);
-    if (!matches(q)) { Object.assign(state, { topic: "all", level: "all", type: "all", status: "all", term: "" }); $("q").value = ""; render(); }
+    if (!matches(byId.get(id))) {
+      FILTERS.forEach(f => (state[f.key] = new Set()));
+      state.term = ""; $("q").value = ""; render();
+    }
     openQuestion(id);
   }
   window.addEventListener("hashchange", fromHash);
 
   P.onChange(() => {
     account();
-    if (state.status !== "all") render();
+    if (state.status.size) render();
     else { listEl.querySelectorAll("details.qa").forEach(refreshCard); listEl.querySelectorAll("section.topic").forEach(sec => {
       const m = sec.querySelector(".meter"); if (m) m.outerHTML = meter(SF.q.filter(q => q.topic === sec.dataset.topic)); }); stats(); }
   });

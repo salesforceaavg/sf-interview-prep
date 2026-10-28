@@ -125,13 +125,24 @@ Each file in `data/` calls `SF.add(topic, rows)`. A row is:
 - Inside the backtick strings, write `&lt;` and `&gt;` for `<` and `>` in code, and don't use
   a backtick or `${`.
 
-To add a new topic, add it to `data/topics.js` and add a `<script>` tag for its file in `index.html`.
+To add a new topic, add it to `data/topics.js` (with a `group`, which decides its section
+in the Topic dropdown) and add a `<script>` tag for its file in `index.html`.
+
+**Cloud filter.** Every question is tagged automatically by `assets/clouds.js`:
+questions in the Sales/Service/Experience Cloud topics get that cloud, others are tagged
+from keywords in the question (Opportunity, Lead, Quote → Sales; Case, Omni-Channel,
+Knowledge → Service; portal, guest, site → Experience), and anything left is
+"Core Platform". To set clouds by hand, add a 6th element to the row:
+
+```js
+["criteria-136", "Mid", "code", `Question`, `<p>Answer</p>`, ["sales", "service"]]
+```
 
 ---
 
 ## 5. Ideas to take it further
 
-Built in already: search, topic/level/type/progress filters, random question, shareable
+Built in already: search, multi-select Topic (grouped), Cloud, Level, Type and Progress filters, random question, shareable
 deep links (`#apex-104`), per-topic progress bars, dark mode, sign-in sync.
 
 Good next steps, roughly in order of value:

@@ -26,11 +26,10 @@
     <button class="btn" id="random" type="button">Random question</button>
     <button class="btn" id="expand" type="button">Expand all</button>
   </div>
-  <div class="chips" id="chips-topic" role="toolbar" aria-label="Filter by topic"></div>
-  <div class="filters">
-    <div class="chips" id="chips-level" role="toolbar" aria-label="Filter by level"></div>
-    <div class="chips" id="chips-type" role="toolbar" aria-label="Filter by question type"></div>
-    <div class="chips" id="chips-status" role="toolbar" aria-label="Filter by your progress"></div>
+  <div class="filters" id="filters" aria-label="Filters"></div>
+  <div class="active-row">
+    <div class="active" id="active" hidden></div>
+    <span class="result-count" id="result-count" aria-live="polite"></span>
   </div>
 </div></div>
 
@@ -80,6 +79,7 @@
 <script src="data/criteria.js"></script>
 <script src="data/scenario.js"></script>
 
+<script src="assets/clouds.js"></script>
 <script src="assets/progress.js"></script>
 <script src="assets/app.js"></script>
 </body>
