@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Salesforce Developer Interview Prep</title>
+<meta name="description" content="500+ Salesforce developer interview questions with detailed answers: Apex, SOQL, triggers, async, LWC, integration, security, Flow, Sales/Service/Experience Cloud, scenarios and code-output puzzles.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <div class="topline">
+    <div class="eyebrow">For 3–7 years experience · Sales, Service &amp; Experience Cloud</div>
+    <div class="account" id="account"></div>
+  </div>
+  <h1>Salesforce Developer Interview Prep</h1>
+  <p class="lede">Concept, scenario, criteria-based and code-output questions with answers at the level a senior interviewer expects. Everything is free to read. Sign in only if you want your progress saved across devices.</p>
+  <div class="stats" id="stats"></div>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <div class="row">
+    <input id="q" type="search" placeholder="Search, e.g. mixed DML, refreshApex, selective query" aria-label="Search questions">
+    <button class="btn" id="random" type="button">Random question</button>
+    <button class="btn" id="expand" type="button">Expand all</button>
+  </div>
+  <div class="chips" id="chips-topic" role="toolbar" aria-label="Filter by topic"></div>
+  <div class="filters">
+    <div class="chips" id="chips-level" role="toolbar" aria-label="Filter by level"></div>
+    <div class="chips" id="chips-type" role="toolbar" aria-label="Filter by question type"></div>
+    <div class="chips" id="chips-status" role="toolbar" aria-label="Filter by your progress"></div>
+  </div>
+</div></div>
+
+<main><div class="wrap" id="list"></div></main>
+
+<dialog id="auth-dialog">
+  <form method="dialog" id="auth-form" class="auth">
+    <h2>Save your progress</h2>
+    <p>Sign in to keep your "In review" and "Done" marks in your account and see them on any device. Without signing in, marks stay in this browser.</p>
+    <label for="auth-email">Email</label>
+    <input id="auth-email" type="email" required autocomplete="email" placeholder="you@example.com">
+    <button class="btn primary" id="auth-send" type="submit" value="send">Email me a sign-in link</button>
+    <div class="oauth" id="auth-oauth"></div>
+    <p class="msg" id="auth-msg" role="status"></p>
+    <button class="btn ghost" type="button" id="auth-close">Close</button>
+  </form>
+</dialog>
+
+<footer class="foot"><div class="wrap">
+  <p>Answers reflect Salesforce behaviour as of the Winter '26 / Spring '26 releases. Limits change; check the official docs before quoting an exact number in production design.</p>
+</div></footer>
+
+<!-- Optional: Supabase client for login + sync. The site works without it. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+
+<!-- Question data -->
+<script src="data/topics.js"></script>
+<script src="data/core.js"></script>
+<script src="data/apex.js"></script>
+<script src="data/soql.js"></script>
+<script src="data/dml.js"></script>
+<script src="data/trigger.js"></script>
+<script src="data/async.js"></script>
+<script src="data/lwc.js"></script>
+<script src="data/vf.js"></script>
+<script src="data/integ.js"></script>
+<script src="data/sec.js"></script>
+<script src="data/admin.js"></script>
+<script src="data/testing.js"></script>
+<script src="data/devops.js"></script>
+<script src="data/perf.js"></script>
+<script src="data/sales.js"></script>
+<script src="data/service.js"></script>
+<script src="data/exp.js"></script>
+<script src="data/logic.js"></script>
+<script src="data/criteria.js"></script>
+<script src="data/scenario.js"></script>
+
+<script src="assets/progress.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
