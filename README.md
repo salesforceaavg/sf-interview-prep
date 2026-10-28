@@ -111,7 +111,52 @@ scrambles people's progress. **Never renumber or reuse an id**; add new ones ins
 
 ---
 
-## 4. Adding or editing questions
+## 4. Admin page: add, edit and delete questions without code
+
+`admin.html` (linked as "Admin" in the footer) lets admins manage questions from the
+browser. Changes go live on the site immediately; no redeploy needed.
+
+**How it works.** The built-in questions stay in `data/*.js`. Admin edits are stored in
+the Supabase `questions` table, and the site applies them on top when it loads:
+a row with an existing id replaces that question, a new id adds a question, and a row
+marked deleted hides it. If the database is unreachable, the site shows the built-in
+questions after a few seconds instead of hanging.
+
+**Set up (once):**
+1. Complete section 3 (Supabase + `config.js`).
+2. Run the latest `supabase/schema.sql` again in the SQL Editor. It is safe to re-run;
+   it adds the `questions`, `admins` and `question_history` tables and their security rules.
+3. Open `admin.html` on your site and sign in once with your email.
+4. In Supabase → SQL Editor, make yourself an admin:
+   ```sql
+   insert into public.admins (user_id)
+   select id from auth.users where email = 'you@example.com';
+   ```
+   (The admin page also shows the exact SQL with your user id if you aren't an admin yet.)
+5. Reload the admin page.
+
+**What admins can do**
+- Search and filter all questions by topic and by state (Added, Edited, Deleted, Original).
+- Edit topic, level, type, cloud tags, question and answer, with a live preview and a
+  formatting toolbar (paragraph, bullets, code block, inline code, bold, tip box, escape &lt; &gt;).
+- Add new questions; the id is generated from the topic (e.g. `sales-111`).
+- Delete (hides from the site, reversible with Restore).
+- Revert an edited built-in question to its original text.
+- Version history: every save and delete keeps the previous version; load any version
+  back into the editor and save it to roll back.
+- Export all edits as JSON (backup), or "Copy as data row" to move an edit into the
+  `data/*.js` files permanently.
+- Ctrl/Cmd + S saves. The page warns before you leave with unsaved changes.
+
+**Security.** Only accounts in the `admins` table can write (enforced by Row Level
+Security in the database, not by the page). Everyone can read questions. Answers saved
+through the admin page are cleaned before display: scripts, event handlers, iframes and
+`javascript:` links are removed; formatting tags, code blocks, tables and links are kept.
+The admin page is excluded from search engines with a `noindex` tag.
+
+---
+
+## 5. Adding or editing questions in the code
 
 Each file in `data/` calls `SF.add(topic, rows)`. A row is:
 
@@ -140,7 +185,7 @@ Knowledge → Service; portal, guest, site → Experience), and anything left is
 
 ---
 
-## 5. Ideas to take it further
+## 6. Ideas to take it further
 
 Built in already: search, multi-select Topic (grouped), Cloud, Level, Type and Progress filters, random question, shareable
 deep links (`#apex-104`), per-topic progress bars, dark mode, sign-in sync.

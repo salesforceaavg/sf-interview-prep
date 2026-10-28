@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Question Admin · Salesforce Interview Prep</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body class="admin">
+
+<header class="adm-top"><div class="wrap adm-top-row">
+  <div>
+    <div class="eyebrow">BM Dynamics Learning</div>
+    <h1>Question admin</h1>
+  </div>
+  <div class="adm-account" id="account"></div>
+</div></header>
+
+<main><div class="wrap">
+
+  <!-- shown until we know who the visitor is -->
+  <section class="gate" id="gate">
+    <p class="empty">Checking access…</p>
+  </section>
+
+  <section class="workspace" id="workspace" hidden>
+    <aside class="side" aria-label="Questions">
+      <div class="side-tools">
+        <input id="search" type="search" placeholder="Search id or text" aria-label="Search questions">
+        <div class="side-row">
+          <select id="f-topic" aria-label="Filter by topic"><option value="">All topics</option></select>
+          <select id="f-state" aria-label="Filter by edit state">
+            <option value="">All states</option>
+            <option value="new">Added</option>
+            <option value="edited">Edited</option>
+            <option value="deleted">Deleted</option>
+            <option value="original">Original</option>
+          </select>
+        </div>
+        <div class="side-row">
+          <button class="btn primary" id="new-q" type="button">New question</button>
+          <button class="btn" id="export" type="button">Export edits</button>
+        </div>
+        <p class="side-count" id="side-count"></p>
+      </div>
+      <ul class="qlist" id="qlist"></ul>
+    </aside>
+
+    <section class="editor" id="editor" aria-label="Editor">
+      <p class="empty">Pick a question on the left, or create a new one.</p>
+    </section>
+  </section>
+
+</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/db.js"></script>
+
+<script src="data/topics.js"></script>
+<script src="data/core.js"></script>
+<script src="data/apex.js"></script>
+<script src="data/soql.js"></script>
+<script src="data/dml.js"></script>
+<script src="data/trigger.js"></script>
+<script src="data/async.js"></script>
+<script src="data/lwc.js"></script>
+<script src="data/vf.js"></script>
+<script src="data/integ.js"></script>
+<script src="data/sec.js"></script>
+<script src="data/admin.js"></script>
+<script src="data/testing.js"></script>
+<script src="data/devops.js"></script>
+<script src="data/perf.js"></script>
+<script src="data/sales.js"></script>
+<script src="data/service.js"></script>
+<script src="data/exp.js"></script>
+<script src="data/logic.js"></script>
+<script src="data/criteria.js"></script>
+<script src="data/scenario.js"></script>
+
+<script src="assets/questions.js"></script>
+<script src="assets/clouds.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>

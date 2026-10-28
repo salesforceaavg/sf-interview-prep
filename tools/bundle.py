@@ -23,6 +23,7 @@ def inline(m):
     return "<script>\n" + js + "\n</script>"
 
 body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+body = re.sub(r'\s*<a href="admin.html"[^>]*>Admin</a>', "", body)   # no admin page in a single-file bundle
 body = re.sub(r'<script src="([^"]+)"></script>', inline, body)
 body = body.replace("<script>", "<script>window.SF_CONFIG={};</script>\n<script>", 1)
 

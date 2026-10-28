@@ -1,7 +1,8 @@
-// Tags every question with the clouds it relates to.
+// Tags a question with the clouds it relates to (SF.tagClouds(q) sets q.clouds).
 // Questions in the Sales/Service/Experience topics always get that cloud.
 // Other questions are tagged by keywords in the question text; anything left
-// untagged is "core" (applies to every cloud). A row's 6th element overrides this.
+// untagged is "core" (applies to every cloud). An explicit clouds list on the
+// question (6th element of a data row, or set on the admin page) wins.
 (() => {
   const RULES = {
     sales: /\b(opportunit\w*|leads?|lead conversion|quotes?|forecast\w*|territor\w*|price ?books?|products?|campaigns?|sales (cloud|users?|reps?|vp|processes)|deals?|renewals?|discounts?|cpq|invoices?)\b/i,
@@ -17,13 +18,17 @@
     "sec-104": ["core"]             // generic sharing design
   };
 
-  window.SF.q.forEach(q => {
-    const fixed = (Array.isArray(q.cloudOverride) && q.cloudOverride.length) ? q.cloudOverride : FIXED[q.id];
-    if (fixed) { q.clouds = fixed; return; }
-    const text = q.q.replace(/<[^>]+>/g, " ").replace(NOISE, " ");
+  window.SF.autoClouds = q => {
+    const text = String(q.q || "").replace(/<[^>]+>/g, " ").replace(NOISE, " ");
     const set = new Set();
     if (TOPIC_CLOUD[q.topic]) set.add(TOPIC_CLOUD[q.topic]);
     Object.keys(RULES).forEach(c => { if (RULES[c].test(text)) set.add(c); });
-    q.clouds = set.size ? [...set] : ["core"];
-  });
+    return set.size ? [...set] : ["core"];
+  };
+
+  window.SF.tagClouds = q => {
+    const fixed = (Array.isArray(q.cloudOverride) && q.cloudOverride.length) ? q.cloudOverride : FIXED[q.id];
+    q.clouds = fixed || window.SF.autoClouds(q);
+    return q;
+  };
 })();
